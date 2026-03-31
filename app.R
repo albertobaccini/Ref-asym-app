@@ -1,21 +1,15 @@
 # ============================================================================
 # app.R - Interactive Journal Citation Asymmetry Explorer (Pure Plotly)
 # ============================================================================
-# This Shiny app allows users to explore citation asymmetry patterns between
-# journal clusters. Users can select citing/cited clusters and visualize
-# the asymmetry heatmap with faceting by time period.
-# 
-# NOTE: Uses direct plotly heatmaps (no ggplot2) for Shinylive compatibility
-# ============================================================================
 
-# Load required libraries
+# Load required libraries (NO GGPLOT2!)
 library(shiny)
 library(dplyr)
 library(stringr)
 library(plotly)
 
 # ============================================================================
-# DATA LOADING (runs once when app starts)
+# DATA LOADING
 # ============================================================================
 
 # Load cluster legend CSV file
@@ -28,25 +22,23 @@ cluster_legend <- cluster_legend %>%
 # Ensure clusters are in numeric order for dropdown
 cluster_legend <- cluster_legend %>% arrange(cluster)
 
-# Create named vector for cluster name lookup: cluster_code -> cluster_name
+# Create named vector for cluster name lookup
 cluster_names <- setNames(cluster_legend$cluster_label, cluster_legend$cluster)
 
-# Create named vector for dropdown choices: label = "Name (code)", value = code
+# Create named vector for dropdown choices
 dropdown_choices <- setNames(
-  cluster_legend$cluster,  # Internal value (e.g., 3)
-  paste0(cluster_legend$cluster_label, " (", cluster_legend$cluster, ")")  # Display label
+  cluster_legend$cluster,
+  paste0(cluster_legend$cluster_label, " (", cluster_legend$cluster, ")")
 )
 
 # Load the asymmetry data
 journal_asymmetry <- readRDS("data/journal_asymmetry.rds")
 
 # ============================================================================
-# USER INTERFACE (UI)
+# USER INTERFACE
 # ============================================================================
 
 ui <- fluidPage(
-  
-  # Application title
   titlePanel(
     title = div(
       "Journal Citation Asymmetry Explorer",
@@ -54,40 +46,31 @@ ui <- fluidPage(
     )
   ),
   
-  # Sidebar layout
   sidebarLayout(
-    
-    # ===== SIDEBAR PANEL =====
     sidebarPanel(
       width = 3,
-      
       h4("Cluster Selection"),
       hr(),
-      
       selectInput(
         inputId = "citing_cluster",
         label = "Row Cluster (Journal i - Y axis)",
         choices = dropdown_choices,
         selected = "3"
       ),
-      
       selectInput(
         inputId = "cited_cluster",
         label = "Column Cluster (Journal j - X axis)",
         choices = dropdown_choices,
         selected = "3"
       ),
-      
       hr(),
       h4("Visualization Options"),
       hr(),
-      
       checkboxInput(
         inputId = "truncate_labels",
         label = "Truncate X-axis labels to 28 characters",
         value = TRUE
       ),
-      
       sliderInput(
         inputId = "label_size",
         label = "X-axis label font size",
@@ -96,7 +79,6 @@ ui <- fluidPage(
         value = 10,
         step = 0.5
       ),
-      
       numericInput(
         inputId = "asym_limit",
         label = "Asymmetry color scale limit (+/-)",
@@ -105,18 +87,15 @@ ui <- fluidPage(
         max = 1.0,
         step = 0.05
       ),
-      
       checkboxInput(
         inputId = "reverse_y",
         label = "Reverse Y-axis order (top to bottom)",
         value = TRUE
       ),
-      
       hr(),
       h4("Export"),
       hr(),
       helpText("Use the camera icon on the plot to download as PNG."),
-      
       br(),
       h4("Color legend"),
       helpText(
@@ -129,7 +108,6 @@ ui <- fluidPage(
       )
     ), 
     
-    # ===== MAIN PANEL =====
     mainPanel(
       width = 9,
       verbatimTextOutput("selection_info"),
@@ -144,12 +122,10 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  # Helper function to get cluster name
   get_cluster_name <- function(cluster_code) {
     cluster_names[as.character(as.numeric(cluster_code))]
   }
   
-  # Reactive data filtering
   filtered_data <- reactive({
     citing_code <- as.numeric(input$citing_cluster)
     cited_code <- as.numeric(input$cited_cluster)
@@ -159,7 +135,6 @@ server <- function(input, output, session) {
              citedcluster == cited_code)
   })
   
-  # Selection information display
   output$selection_info <- renderPrint({
     citing_code <- as.numeric(input$citing_cluster)
     cited_code <- as.numeric(input$cited_cluster)
@@ -174,46 +149,36 @@ server <- function(input, output, session) {
     }
   })
   
-  # Interactive heatmap with direct plotly
   output$heatmap_plot <- renderPlotly({
     data <- filtered_data()
     
     validate(
       need(nrow(data) > 0, 
-           "No data available for the selected cluster combination. Please choose different clusters.")
+           "No data available for the selected cluster combination.")
     )
     
-    # Get cluster names
     citing_name <- get_cluster_name(as.numeric(input$citing_cluster))
     cited_name <- get_cluster_name(as.numeric(input$cited_cluster))
     
-    # Prepare data for heatmap
-    # Create unique time periods
     time_periods <- unique(data$work_period)
-    
-    # Create a list of plots (one per time period)
     plots <- list()
     
     for(period in time_periods) {
       period_data <- data %>% filter(work_period == period)
       
-      # Get unique journal names and order them
       work_names <- unique(period_data$work_name)
       ref_names <- unique(period_data$ref_name)
       
-      # Apply Y-axis reversal if selected
       if(input$reverse_y) {
         work_names <- rev(work_names)
       }
       
-      # Apply label truncation
       ref_labels <- if(input$truncate_labels) {
         str_sub(ref_names, 1, 28)
       } else {
         ref_names
       }
       
-      # Create matrix for heatmap
       z_matrix <- matrix(NA, nrow = length(work_names), ncol = length(ref_names))
       for(i in seq_along(work_names)) {
         for(j in seq_along(ref_names)) {
@@ -226,89 +191,43 @@ server <- function(input, output, session) {
         }
       }
       
-      # Create heatmap with plotly
       p <- plot_ly(
         x = ref_labels,
         y = work_names,
         z = z_matrix,
         type = "heatmap",
         colorscale = list(
-          list(0, "rgb(215,48,39)"),     # red for negative
-          list(0.5, "rgb(255,255,255)"), # white for zero
-          list(1, "rgb(69,117,180)")     # blue for positive
+          list(0, "rgb(215,48,39)"),
+          list(0.5, "rgb(255,255,255)"),
+          list(1, "rgb(69,117,180)")
         ),
         zmin = -input$asym_limit,
         zmax = input$asym_limit,
-        hovertemplate = "Journal i: %{y}<br>Journal j: %{x}<br>Asymmetry: %{z:.4f}<extra></extra>",
-        name = period
+        hovertemplate = "Journal i: %{y}<br>Journal j: %{x}<br>Asymmetry: %{z:.4f}<extra></extra>"
       ) %>%
         layout(
           title = list(text = period, font = list(size = 12)),
-          xaxis = list(
-            title = "",
-            tickangle = 90,
-            tickfont = list(size = input$label_size)
-          ),
-          yaxis = list(title = ""),
-          margin = list(b = 50, t = 50)
+          xaxis = list(tickangle = 90, tickfont = list(size = input$label_size)),
+          yaxis = list(title = "")
         )
       
       plots[[length(plots) + 1]] <- p
     }
     
-    # Combine plots with subplot (faceting)
     if(length(plots) > 0) {
-      subplot(
-        plots, 
-        nrows = ceiling(length(plots) / 3),
-        titleX = TRUE,
-        titleY = TRUE,
-        margin = 0.05
-      ) %>%
+      subplot(plots, nrows = ceiling(length(plots) / 3), margin = 0.05) %>%
         layout(
-          title = paste("Citation Asymmetry:", citing_name, "(cluster", input$citing_cluster, 
-                        ") vs", cited_name, "(cluster", input$cited_cluster, ")"),
+          title = paste("Citation Asymmetry:", citing_name, "vs", cited_name),
           annotations = list(
-            list(
-              x = 0.5,
-              y = -0.1,
-              text = "Column Journals (j)",
-              showarrow = FALSE,
-              xref = "paper",
-              yref = "paper",
-              font = list(size = 12)
-            ),
-            list(
-              x = -0.08,
-              y = 0.5,
-              text = "Row Journals (i)",
-              showarrow = FALSE,
-              xref = "paper",
-              yref = "paper",
-              textangle = 90,
-              font = list(size = 12)
-            )
-          ),
-          margin = list(b = 80, l = 120, t = 80, r = 30)
-        ) %>%
-        config(
-          toImageButtonOptions = list(
-            format = "png",
-            filename = paste0("asymmetry_", citing_name, "_vs_", cited_name),
-            width = 1200,
-            height = 800,
-            scale = 2
+            list(x = 0.5, y = -0.1, text = "Column Journals (j)", showarrow = FALSE, xref = "paper", yref = "paper"),
+            list(x = -0.08, y = 0.5, text = "Row Journals (i)", showarrow = FALSE, xref = "paper", yref = "paper", textangle = 90)
           )
-        )
+        ) %>%
+        config(toImageButtonOptions = list(format = "png", filename = paste0("asymmetry_", citing_name, "_vs_", cited_name)))
     } else {
-      plotly_empty() %>%
-        layout(title = "No data available")
+      plotly_empty() %>% layout(title = "No data available")
     }
   })
 }
-
-# ============================================================================
-# RUN THE APPLICATION
-# ============================================================================
 
 shinyApp(ui = ui, server = server)

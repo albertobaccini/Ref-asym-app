@@ -26,9 +26,13 @@ jobs:
             cran::shinylive@0.3.0
             local::.
       
-      - name: Convert Shiny app to Shinylive
+      - name: Clean and Convert Shiny app to Shinylive
         shell: Rscript {0}
-        run: shinylive::export(".", "_site")
+        run: |
+          # Pulisci vecchia build
+          if(dir.exists("_site")) unlink("_site", recursive = TRUE)
+          # Esporta con verbose
+          shinylive::export(".", "_site", verbose = TRUE)
       
       - uses: actions/upload-pages-artifact@v3
         with:

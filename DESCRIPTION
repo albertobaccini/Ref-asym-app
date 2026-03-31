@@ -1,12 +1,14 @@
 Package: RefAsymApp
-Title: J_Ref_Asym_App
+Title: Journal Citation Asymmetry Explorer
 Version: 0.0.1
-Authors@R: person("Alberto", "Baccini", email = "alberto.baccini@unisi.it", role = c("aut", "cre"))
-Description: Reference asymmetry between Economics journals: 
+Authors@R: person("Tuo", "Nome", email = "tua@email.com", role = c("aut", "cre"))
+Description: Interactive Shiny app to explore citation asymmetry patterns between journal clusters with plotly heatmaps.
+Imports: 
     shiny,
     ggplot2,
     dplyr,
     stringr,
     RColorBrewer,
-    plotly
+    plotly,
+    scales
 Encoding: UTF-8

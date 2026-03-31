@@ -22,7 +22,7 @@ library(plotly)  # <-- NEW: For interactive tooltips
 
 # Load cluster legend CSV file
 # Expected structure: cluster (integer), cluster_label (character)
-cluster_legend <- read.csv("cluster_legend.csv", stringsAsFactors = FALSE)
+cluster_legend <- read.csv("data/cluster_legend.csv", stringsAsFactors = FALSE)
 
 # Filter to keep only clusters 1 through 34
 cluster_legend <- cluster_legend %>% 
@@ -44,7 +44,7 @@ dropdown_choices <- setNames(
 
 # NOTE: Make sure 'journal_asymmetry' dataframe is loaded in your environment
 # If needed, uncomment the line below and adjust the path:
-# journal_asymmetry <- readRDS("journal_asymmetry.rds")
+journal_asymmetry <- readRDS("data/journal_asymmetry.rds")
 
 # ============================================================================
 # USER INTERFACE (UI)

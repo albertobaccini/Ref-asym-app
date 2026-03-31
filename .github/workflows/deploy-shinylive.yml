@@ -23,6 +23,7 @@ jobs:
           packages: |
             cran::shinylive@0.3.0
             local::.
+            cache: false   # <-- AGGIUNGI QUESTA RIGA
       
       - name: Convert Shiny app to Shinylive
         shell: Rscript {0}

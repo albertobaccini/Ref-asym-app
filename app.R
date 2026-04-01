@@ -13,7 +13,7 @@ library(plotly)
 # ============================================================================
 
 # Load cluster legend CSV file
-cluster_legend <- read.csv("cluster_legend.csv", stringsAsFactors = FALSE)
+cluster_legend <- read.csv("data/cluster_legend.csv", stringsAsFactors = FALSE)
 
 # Filter to keep only clusters 1 through 34
 cluster_legend <- cluster_legend %>% 
